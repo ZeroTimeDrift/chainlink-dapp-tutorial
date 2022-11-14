@@ -10,7 +10,9 @@ function App() {
   const ABI = '[{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getLatestPrice","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"storeLatestPrice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"storedPrice","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"}]'
   const contract = new ethers.Contract(contractAddress, ABI, signer);
 
-
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [defaultAccount, setDefaultAccount] = useState(null);
+  const [userBalance, setUserBalance] = useState(null);
 
   const getStoredPrice = async () => {
     try {
@@ -31,10 +33,28 @@ function App() {
     } catch (error) {
       console.log("updatePrice Error: ", error);
     }
-
-
   }
 
+    const accountChangedHandler = async (newAccount) => {
+        const address = await newAccount.getAddress();
+        setDefaultAccount(address);
+        const balance = await newAccount.getBalance()
+        setUserBalance(ethers.utils.formatEther(balance));
+        await getuserBalance(address)
+    }
+    const getuserBalance = async (address) => {
+        const balance = await provider.getBalance(address, "latest")
+    }
+  const connectwalletHandler = () => {
+    if (window.ethereum) {
+        provider.send("eth_requestAccounts", []).then(async () => {
+            await accountChangedHandler(provider.getSigner());
+        })
+    } else {
+        setErrorMessage("Please Install MetaMask!!!");
+    }
+  
+  }
   getStoredPrice()
   .catch(console.error)
 
@@ -49,7 +69,7 @@ function App() {
 
         <div className="col">
           <h3>Update Price</h3>
-          <button type="submit" className="btn btn-dark" onClick={updatePrice}>Update</button>
+          <button type="submit" className="btn btn-dark" onClick={connectwalletHandler}>Connect Wallet</button>
         </div>
       </div>
     </div>
